@@ -9,7 +9,7 @@ import {
 } from "../utils/auth.utils.js";
 
 
-export const registerUser = async ({ name, email, password }) => {
+export const registerUser = async ({ name, email, password, role }) => {
   if (!name || typeof name !== "string" || !name.trim()) {
     const error = new Error("Name is required");
     error.statusCode = 400;
@@ -48,11 +48,14 @@ export const registerUser = async ({ name, email, password }) => {
 
   const passwordHash = await hashPassword(password);
 
+  const assignedRole = role && typeof role === "string" && role.toUpperCase() === "ADMIN" ? "ADMIN" : "CUSTOMER";
+
   const user = await prisma.user.create({
     data: {
       name: name.trim(),
       email: normalizedEmail,
-      password: passwordHash,
+      passwordHash,
+      role: assignedRole,
     },
   });
 
@@ -78,7 +81,7 @@ export const loginUser = async ({ email, password }) => {
     throw error;
   }
 
-  const isPasswordValid = await comparePassword(password, user.password);
+  const isPasswordValid = await comparePassword(password, user.passwordHash || user.password);
   if (!isPasswordValid) {
     const error = new Error("Invalid email or password");
     error.statusCode = 401;
@@ -88,6 +91,7 @@ export const loginUser = async ({ email, password }) => {
   const tokenPayload = {
     userId: user.id,
     email: user.email,
+    role: user.role,
   };
 
   const accessToken = generateAccessToken(tokenPayload);
@@ -133,6 +137,7 @@ export const refreshTokenService = async (refreshToken) => {
   const newAccessToken = generateAccessToken({
     userId: user.id,
     email: user.email,
+    role: user.role,
   });
 
   return { accessToken: newAccessToken };

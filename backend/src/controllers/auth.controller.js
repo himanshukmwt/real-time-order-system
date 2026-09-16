@@ -3,8 +3,8 @@ import { getRefreshTokenCookieOptions } from "../utils/auth.utils.js";
 
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
-    const user = await authService.registerUser({ name, email, password });
+    const { name, email, password, role } = req.body;
+    const user = await authService.registerUser({ name, email, password, role });
 
     return res.status(201).json({
       success: true,

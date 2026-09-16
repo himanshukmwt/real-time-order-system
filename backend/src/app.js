@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
+import productRoutes from "./routes/product.routes.js";
 
 const app = express();
 
@@ -25,6 +26,9 @@ app.get("/", (req, res) => {
 
 // Authentication Routes
 app.use("/api/auth", authRoutes);
+
+// Product Routes
+app.use("/api/products", productRoutes);
 
 // Centralized Error Handler Middleware
 app.use((err, req, res, next) => {
