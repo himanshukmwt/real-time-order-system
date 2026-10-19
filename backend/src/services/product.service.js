@@ -179,7 +179,7 @@ export const deleteProduct = async (id) => {
     const error = new Error(
       `Cannot delete product '${existingProduct.name}': it is associated with ${linkedOrderItemsCount} existing order item(s). Modifying or deleting this product would violate order history integrity.`
     );
-    error.statusCode = 409; 
+    error.statusCode = 409;
     throw error;
   }
 

@@ -48,14 +48,13 @@ export const registerUser = async ({ name, email, password, role }) => {
 
   const passwordHash = await hashPassword(password);
 
-  const assignedRole = role && typeof role === "string" && role.toUpperCase() === "ADMIN" ? "ADMIN" : "CUSTOMER";
+  const assignedRole = role && typeof role === "string" && role.toUpperCase() === "ADMIN" ? "ADMIN" : "USER";
 
   const user = await prisma.user.create({
     data: {
       name: name.trim(),
       email: normalizedEmail,
-      passwordHash,
-      role: assignedRole,
+      password: passwordHash,
     },
   });
 

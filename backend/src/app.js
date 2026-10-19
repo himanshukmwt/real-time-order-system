@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
 
 const app = express();
 
@@ -30,7 +31,10 @@ app.use("/api/auth", authRoutes);
 // Product Routes
 app.use("/api/products", productRoutes);
 
-// Centralized Error Handler Middleware
+// Cart Routes
+app.use("/api/cart", cartRoutes);
+
+// Centralized Error Handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   res.status(statusCode).json({
