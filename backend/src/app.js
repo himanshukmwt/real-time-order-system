@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
+import orderRoutes from "./routes/order.routes.js";
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.use("/api/products", productRoutes);
 
 // Cart Routes
 app.use("/api/cart", cartRoutes);
+
+// Order Routes
+app.use("/api/orders", orderRoutes);
 
 // Centralized Error Handler
 app.use((err, req, res, next) => {
