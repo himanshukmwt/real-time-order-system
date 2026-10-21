@@ -1,5 +1,14 @@
 import * as authService from "../services/auth.service.js";
 import { getRefreshTokenCookieOptions } from "../utils/auth.utils.js";
+import redis from "../config/redis.js";
+
+const blacklistToken = async (token, exp) => {
+  const ttl = exp - Math.floor(Date.now() / 1000);
+  if (ttl > 0) {
+    await redis.set(`blacklist:${token}`, "1", "EX", ttl);
+  }
+};
+
 
 export const register = async (req, res, next) => {
   try {
@@ -56,17 +65,42 @@ export const refresh = async (req, res, next) => {
   }
 };
 
-export const logout = (req, res) => {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+// export const logout = (req, res) => {
 
-  return res.status(200).json({
-    success: true,
-    message: "Logged out successfully",
-  });
+//   res.clearCookie("refreshToken", {
+//     httpOnly: true,
+//     secure: process.env.NODE_ENV === "production",
+//     sameSite: "lax",
+//   });
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Logged out successfully",
+//   });
+// };
+
+export const logout = async (req, res, next) => {
+  try {
+    await blacklistToken(req.token, req.user.exp);
+
+    const refreshToken = req.cookies?.refreshToken;
+    if (refreshToken) {
+      try {
+        const decoded = verifyRefreshToken(refreshToken);
+        await blacklistToken(refreshToken, decoded.exp);
+      } catch {
+      }
+    }
+
+    res.clearCookie("refreshToken", getRefreshTokenCookieOptions());
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getMe = async (req, res, next) => {

@@ -1,9 +1,17 @@
 import prisma from "../lib/prisma.js";
+import { getCache, setCache, deleteByPrefix } from "../utils/cache.utils.js";
 
 export const getAllProducts = async () => {
+  const key = "products:all";
+
+  const cached = await getCache(key);
+  if (cached) return cached; 
+
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
   });
+
+  await setCache(key, products, 120);
   return products;
 };
 
@@ -14,8 +22,14 @@ export const getProductById = async (id) => {
     throw error;
   }
 
+  const cleanId = id.trim();
+  const key = `products:${cleanId}`;
+
+  const cached = await getCache(key);
+  if (cached) return cached;
+
   const product = await prisma.product.findUnique({
-    where: { id: id.trim() },
+    where: { id: cleanId },
   });
 
   if (!product) {
@@ -23,7 +37,7 @@ export const getProductById = async (id) => {
     error.statusCode = 404;
     throw error;
   }
-
+  await setCache(key, product, 120);
   return product;
 };
 
@@ -69,7 +83,7 @@ export const createProduct = async ({
       imageUrl: imageUrl && typeof imageUrl === "string" ? imageUrl.trim() : null,
     },
   });
-
+   await deleteByPrefix("products:");
   return newProduct;
 };
 
@@ -148,7 +162,7 @@ export const updateProduct = async (id, updateData) => {
     where: { id: id.trim() },
     data: dataToUpdate,
   });
-
+  await deleteByPrefix("products:");
   return updatedProduct;
 };
 
@@ -186,6 +200,6 @@ export const deleteProduct = async (id) => {
   const deletedProduct = await prisma.product.delete({
     where: { id: id.trim() },
   });
-
+  await deleteByPrefix("products:");
   return deletedProduct;
 };

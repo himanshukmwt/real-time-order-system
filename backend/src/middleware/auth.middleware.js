@@ -1,6 +1,7 @@
 import { verifyAccessToken } from "../utils/auth.utils.js";
+import redis from "../config/redis.js";
 
-export const authenticateUser = (req, res, next) => {
+export const authenticateUser = async(req, res, next) => {
   const authHeader = req.headers["authorization"] || req.headers["Authorization"];
 
   if (!authHeader) {
@@ -20,10 +21,9 @@ export const authenticateUser = (req, res, next) => {
 
   const token = parts[1];
 
+  let decoded;
   try {
-    const decoded = verifyAccessToken(token);
-    req.user = decoded;
-    next();
+    decoded = verifyAccessToken(token);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
@@ -31,10 +31,29 @@ export const authenticateUser = (req, res, next) => {
         message: "Access token has expired",
       });
     }
+    
 
     return res.status(401).json({
       success: false,
       message: "Invalid access token",
     });
+
+    }
+
+    try {
+    const revoked = await redis.get(`blacklist:${token}`);
+    if (revoked) {
+      return res.status(401).json({
+        success: false,
+        message: "Token has been revoked. Please login again",
+      });
+    }
+  } catch (err) {
+    console.error("Blacklist check failed (Redis down?):", err.message);
+
   }
+  req.user = decoded;
+  req.token = token; // for logout 
+  next();
+  
 };

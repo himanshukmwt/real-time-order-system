@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { getOrCreateCart } from "./cart.service.js";
+import { deleteByPrefix } from "../utils/cache.utils.js";
 
 export const createOrderFromCart = async (userId) => {
   const cart = await getOrCreateCart(userId);
@@ -91,7 +92,7 @@ export const createOrderFromCart = async (userId) => {
 
     return createdOrder;
   });
-
+  await deleteByPrefix("products:");
   return formatOrderResponse(order);
 };
 

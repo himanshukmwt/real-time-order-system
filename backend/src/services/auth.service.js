@@ -7,7 +7,7 @@ import {
   verifyRefreshToken,
   sanitizeUser,
 } from "../utils/auth.utils.js";
-
+import redis from "../config/redis.js";
 
 export const registerUser = async ({ name, email, password, role }) => {
   if (!name || typeof name !== "string" || !name.trim()) {
@@ -121,6 +121,18 @@ export const refreshTokenService = async (refreshToken) => {
     );
     error.statusCode = 401;
     throw error;
+  }
+
+  try {
+    const revoked = await redis.get(`blacklist:${refreshToken}`);
+    if (revoked) {
+      const error = new Error("Refresh token has been revoked");
+      error.statusCode = 401;
+      throw error;
+    }
+  } catch (err) {
+    if (err.statusCode) throw err;
+    console.error("Refresh blacklist check failed:", err.message);
   }
 
   const user = await prisma.user.findUnique({
