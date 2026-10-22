@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import orderRoutes from "./routes/order.routes.js";
+import { globalIpLimiter } from "./middleware/ratelimiter.middleware.js";
 
 const app = express();
 
@@ -16,7 +17,10 @@ app.use(
     credentials: true,
   })
 );
+app.set('trust proxy', 1); 
 app.use(express.json());
+app.use(globalIpLimiter);
+
 app.use(cookieParser());
 
 // Base Route
