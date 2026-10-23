@@ -106,7 +106,7 @@ export const connectRabbitMQ = async () => {
         console.error("RabbitMQ channel closed");
 
         if (connection === conn) {
-          channel = null;
+          connection = null;
           channel = null;
           conn.close().catch(() => {});
           scheduleReconnect();

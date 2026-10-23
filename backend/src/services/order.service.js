@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { getOrCreateCart } from "./cart.service.js";
 import { deleteByPrefix } from "../utils/cache.utils.js";
+import { publishOrderCreated } from "./orderEvents.service.js";
 
 export const createOrderFromCart = async (userId) => {
   const cart = await getOrCreateCart(userId);
@@ -93,6 +94,13 @@ export const createOrderFromCart = async (userId) => {
     return createdOrder;
   });
   await deleteByPrefix("products:");
+
+  try {
+    await publishOrderCreated(order);
+  } catch (err) {
+    // The order has already been saved to the database, so don't show the user a failure message.
+    console.error(`Failed to publish order.created for ${order.id}:`, err.message);
+  }
   return formatOrderResponse(order);
 };
 
