@@ -1,5 +1,4 @@
 import redis from "../config/redis.js";
-import { AppError } from "../utils/AppError.js";
 
 const incrementScript = `
   local count = redis.call("INCR", KEYS[1])
@@ -60,10 +59,8 @@ export function rateLimiter({
     } catch (err) {
       console.error("Rate limiter Redis error:", err.message);
 
-      // Fail-open: allow request if Redis is unavailable.
       if (failOpen) return next();
 
-      // Fail-closed: block request if Redis is unavailable.
       return next(
         new AppError("Request protection temporarily unavailable", 503)
       );

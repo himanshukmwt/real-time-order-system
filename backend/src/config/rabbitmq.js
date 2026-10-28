@@ -19,6 +19,13 @@ let connectingPromise = null;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
 
+const readyHandlers = [];
+
+export const onRabbitReady = (fn) => {
+  readyHandlers.push(fn);
+  if (channel) fn(channel); 
+};
+
 const setupTopology = async (ch) => {
   // Dead-letter exchange and queue
   await ch.assertExchange(DLX, "direct", { durable: true });
@@ -123,6 +130,15 @@ export const connectRabbitMQ = async () => {
       reconnectAttempts = 0;
 
       console.log("RabbitMQ connected & topology ready");
+
+      //for workers
+      for (const fn of readyHandlers) {
+            try {
+                await fn(ch);
+            } catch (err) {
+                console.error("RabbitMQ ready handler failed:", err.message);
+            }
+            }
 
       return ch;
     } catch (err) {

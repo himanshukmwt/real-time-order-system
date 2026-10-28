@@ -3,6 +3,7 @@ import prisma from "../lib/prisma.js";
 import { getOrCreateCart } from "./cart.service.js";
 import { deleteByPrefix } from "../utils/cache.utils.js";
 import { publishOrderCreated } from "./orderEvents.service.js";
+import { setOrderStatusCache } from "../utils/orderStatus.utils.js";
 
 export const createOrderFromCart = async (userId) => {
   const cart = await getOrCreateCart(userId);
@@ -80,6 +81,7 @@ export const createOrderFromCart = async (userId) => {
       },
     });
 
+    //stock update
     for (const item of orderItemsData) {
       await tx.product.update({
         where: { id: item.productId },
@@ -94,6 +96,7 @@ export const createOrderFromCart = async (userId) => {
     return createdOrder;
   });
   await deleteByPrefix("products:");
+  await setOrderStatusCache(order.id, order.userId, "PENDING");
 
   try {
     await publishOrderCreated(order);
