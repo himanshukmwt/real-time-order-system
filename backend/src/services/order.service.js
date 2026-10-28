@@ -3,7 +3,35 @@ import prisma from "../lib/prisma.js";
 import { getOrCreateCart } from "./cart.service.js";
 import { deleteByPrefix } from "../utils/cache.utils.js";
 import { publishOrderCreated } from "./orderEvents.service.js";
-import { setOrderStatusCache } from "../utils/orderStatus.utils.js";
+import { getOrderStatusCache, setOrderStatusCache } from "../utils/orderStatus.utils.js";
+
+export const getOrderStatus = async (userId, orderId) => {
+  const cached = await getOrderStatusCache(orderId);
+
+  if (cached) {
+    if (cached.userId !== userId) {
+      const error = new Error("Order not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    return { orderId, status: cached.status, updatedAt: cached.updatedAt };
+  }
+
+  // Cache miss: take it from DB
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: { id: true, userId: true, status: true, updatedAt: true },
+  });
+
+  if (!order) {
+    const error = new Error("Order not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await setOrderStatusCache(order.id, order.userId, order.status);
+  return { orderId: order.id, status: order.status, updatedAt: order.updatedAt };
+};
 
 export const createOrderFromCart = async (userId) => {
   const cart = await getOrCreateCart(userId);

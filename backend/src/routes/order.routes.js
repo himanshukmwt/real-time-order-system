@@ -6,5 +6,6 @@ import { orderLimiter } from '../middleware/ratelimiter.middleware.js';
 const router = Router();
 
 router.post("/", authenticateUser,orderLimiter, orderController.createOrder);
+router.get("/:id/status", authenticateUser, orderController.getOrderStatus);
 
 export default router;
